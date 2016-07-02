@@ -33,6 +33,12 @@ class MailController extends Controller
                 case 'trash':
                     $mails = Auth::user()->inbox()->onlyTrashed();
                     break;
+                default:
+                    $mails = Auth::user()->inbox()
+                        ->whereRaw(['tags' => [
+                            '$elemMatch' => ['$eq' => $tab]
+                        ]]);
+                    break;
             }
 
             // Sort
@@ -73,6 +79,16 @@ class MailController extends Controller
     {
         $mail->delete();
         return redirect('/inbox');
+    }
+
+    public function label(Mail $mail, $as)
+    {
+        if ($mail->hasTag($as))
+            $mail->pull('tags', $as);
+        else
+            $mail->push('tags', $as, true);
+
+        return redirect('/read/' . $mail->id);
     }
 
     public function profile()
@@ -130,17 +146,50 @@ class MailController extends Controller
 
     public function add(User $user)
     {
-
         Auth::user()->contacts()->attach($user);
+        $user->contacts()->attach(Auth::user());
+
+        // Send notify to user
+        $mail = new Mail();
+
+        $mail->subject = 'Hello ' . $user->name;
+        $mail->text = 'I added you to my contacts list. please add me if you want :)<br>' . Auth::user()->name . '<br>'
+            . Auth::user()->email;
+
+        $mail->from_id = Auth::user()->id;
+        $mail->to_id = $user->id;
+
+        $mail->save();
+
         return redirect('/contacts');
     }
 
 
     public function reject(User $user)
     {
-
         Auth::user()->contacts()->detach($user->id);
-        return redirect('/contacts');
+        $user->contacts()->detach(Auth::user()->id);
+
+        return redirect('/contacts')->with([
+            'message' => $user->email . ' Has been rejected!'
+        ]);
+    }
+
+    public function block(User $user)
+    {
+        // Block/Unblock
+        if (!Auth::user()->hasBlocked($user)) {
+            $this->reject($user);
+            Auth::user()->push('blocks', $user->id, true);
+            $action = 'blocked';
+        } else {
+            Auth::user()->pull('blocks', $user->id);
+            $action = 'unblocked';
+        }
+
+        return redirect('/contacts')->with([
+            'message' => $user->email . ' Has been ' . $action
+        ]);
     }
 
     public function compose(Request $request)
@@ -155,6 +204,12 @@ class MailController extends Controller
         if ($to == null) {
             return redirect('/inbox')->with([
                 'message' => 'Mail Not Found'
+            ]);
+        }
+
+        if ($to->hasBlocked($from)) {
+            return redirect('/inbox')->with([
+                'message' => 'This user has blocked you!'
             ]);
         }
 
@@ -173,9 +228,10 @@ class MailController extends Controller
         $mail->to_id = $to->id;
 
         // Spam Detection
-        if ( Auth::user()->sent()->count()>5 &&
-            (Auth::user()->sent()->count() / Auth::user()->inbox()->count()) > 3) {
-            $mail->spam = true;
+        if (Auth::user()->sent()->count() > 5 &&
+            (Auth::user()->sent()->count() / Auth::user()->inbox()->count()) > 2
+        ) {
+            $mail->spam = true; // Mark as spam
         }
 
         $mail->save();

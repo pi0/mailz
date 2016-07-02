@@ -78,12 +78,24 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         return null;
     }
 
-    static function get_time_ago ($time)
+    public function hasBlocked(User $user)
+    {
+        if ($this->blocks == null)
+            return false;
+        return in_array($user->id, $this->blocks);
+    }
+
+    public function getTagsAttribute()
+    {
+        return ['important', 'work', 'todo'];
+    }
+
+    static function get_time_ago($time)
     {
 
         $time = time() - $time; // to get the time since that moment
-        $time = ($time<1)? 1 : $time;
-        $tokens = array (
+        $time = ($time < 1) ? 1 : $time;
+        $tokens = array(
             31536000 => 'year',
             2592000 => 'month',
             604800 => 'week',
@@ -96,7 +108,7 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         foreach ($tokens as $unit => $text) {
             if ($time < $unit) continue;
             $numberOfUnits = floor($time / $unit);
-            return $numberOfUnits.' '.$text.(($numberOfUnits>1)?'s':'');
+            return $numberOfUnits . ' ' . $text . (($numberOfUnits > 1) ? 's' : '');
         }
 
     }
@@ -106,12 +118,12 @@ class User extends Model implements AuthenticatableContract, AuthorizableContrac
         /** @var Carbon $d */
         $d = null;
 
-        if ($this->login2!=null)
+        if ($this->login2 != null)
             $d = $this->login2;
-        else if ($this->login1!=null)
+        else if ($this->login1 != null)
             $d = $this->login1;
 
-        return $d ?User::get_time_ago($d->getTimestamp()): '';
+        return $d ? User::get_time_ago($d->getTimestamp()) : '';
     }
 
     public function getNickAttribute($attr)

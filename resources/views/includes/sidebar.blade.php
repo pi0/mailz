@@ -5,7 +5,7 @@
     <ul class="nav nav-pills nav-stacked">
 
         <li v-bind:class="[(tab=='inbox')?'active':'']">
-            <a href="/inbox" >Inbox</a>
+            <a href="/inbox">Inbox</a>
         </li>
 
         <li v-bind:class="[(tab=='sent')?'active':'']">
@@ -16,6 +16,11 @@
             <a href="/inbox/trash">Trash</a>
         </li>
 
+        @foreach(Auth::user()->tags as $tag)
+            <li v-bind:class="[(tab=='{{$tag}}')?'active':'']">
+                <a href="/inbox/{{$tag}}">{{ ucfirst($tag) }}</a>
+            </li>
+        @endforeach
 
     </ul>
 </div>

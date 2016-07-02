@@ -24,7 +24,7 @@ var app = new Vue({
               return 'send';
           else if(this.tab=='trash')
               return 'trash';
-          return '-';
+          return 'star';
       }  
     },
     methods: {

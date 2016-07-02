@@ -16,6 +16,13 @@
             <blockquote class="mail-text">
                 {!! $mail->text !!}
             </blockquote>
+
+            Label as:
+            @foreach(Auth::user()->tags as $tag)
+                <a class="btn btn-{{$mail->hasTag($tag)?'success':'danger'}}"
+                   href="{{url('label/'.$mail->id.'/'.$tag)}}">{{$tag}}</a>
+            @endforeach
+
         </div>
 
         <div class="panel-footer">

@@ -17,8 +17,12 @@
                             <div class="caption">
                                 <h3>{{$user->name}}</h3>
                                 <p>{{$user->email}}</p>
-                                <p><a href="/contacts/reject/{{$user->id}}" class="btn btn-danger"
-                                      role="button">Remove</a>
+                                <p>
+                                    <a href="/contacts/reject/{{$user->id}}" class="btn btn-danger"
+                                       role="button">Reject</a>
+                                    <a href="/contacts/block/{{$user->id}}" class="btn btn-warning"
+                                       role="button">{{Auth::user()->hasBlocked($user)?'Un':''}}Block</a>
+                                </p>
                             </div>
                         </div>
                     </div>
