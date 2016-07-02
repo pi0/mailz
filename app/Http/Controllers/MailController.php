@@ -172,9 +172,15 @@ class MailController extends Controller
         $mail->from_id = $from->id;
         $mail->to_id = $to->id;
 
+        // Spam Detection
+        if ( Auth::user()->sent()->count()>5 &&
+            (Auth::user()->sent()->count() / Auth::user()->inbox()->count()) > 3) {
+            $mail->spam = true;
+        }
+
         $mail->save();
 
-
+        // Attachments
         if ($request->hasFile('attachment')) {
             $file = $request->file('attachment');
             $d = 'upload/attachment/' . $mail->id;
@@ -183,6 +189,7 @@ class MailController extends Controller
             $file->move($d, $n);
             $mail->push('attachments', $n);
         }
+
 
         return redirect()->back();
     }
